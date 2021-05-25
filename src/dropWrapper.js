@@ -3,7 +3,7 @@ import { useDrop } from "react-dnd";
 import { statuses } from "./data";
 
 const DropWrapper = ({ onDrop, children, status }) => {
-  const [{ isOver }, drop] = useDrop({
+  const [, drop] = useDrop({
     accept: "ITEM",
     canDrop: (item, monitor) => {
       const itemIndex = statuses.findIndex((st) => st.status === item.status);
