@@ -1,87 +1,34 @@
-import { useState, useCallback } from "react";
-// import update from "immutability-helper";
-import { uuid } from "uuidv4";
-import "./App.css";
+import { useRef, useState } from "react";
 import { ListElement } from "./ListElement";
-// import { ListBox } from "./ListBox";
-import { useDrop } from "react-dnd";
+import { DropWrapper } from "./dropWrapper";
+import { data } from "./data";
 
 function App() {
-  const [cards, setCards] = useState([
-    {
-      id: uuid(),
-      text: "item 1",
-      type: "list",
-    },
-    {
-      id: uuid(),
-      text: "item 2",
-      type: "list",
-    },
-    {
-      id: uuid(),
-      text: "item 3",
-      type: "list",
-    },
-    {
-      id: uuid(),
-      text: "item 4",
-      type: "list",
-    },
-    {
-      id: uuid(),
-      text: "item 5",
-      type: "list",
-    },
-    {
-      id: uuid(),
-      text: "item 6",
-      type: "list",
-    },
-    {
-      id: uuid(),
-      text: "item 7",
-      type: "list",
-    },
-  ]);
+  const timelineRef = useRef(null);
+  const [cards, setCards] = useState(data);
 
-  const [selectedCard, setSelectedCard] = useState([]);
+  const onDrop = (item, monitor, status, left) => {
+    setCards((prevState) => {
+      const newItem = prevState
+        .filter((i) => i.id !== item.id)
+        .concat({
+          ...item,
+          status,
+          left: left - timelineRef.current.clientWidth,
+        });
+      return [...newItem];
+    });
+  };
 
-  const [{ isOver }, addToTimelineRef] = useDrop({
-    accept: "list",
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver(),
-    }),
-  });
+  const moveItem = (dragIndex, hoverIndex) => {
+    const card = cards[dragIndex];
 
-  const [{ isOver: isListOver }, removeFromTimelineRef] = useDrop({
-    accept: "list",
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver(),
-    }),
-  });
-
-  const moveListItem = useCallback(
-    (item) => {
-      console.log(item);
-      if (item && item.type === "list") {
-        const findElement = cards.find((card) => item.id === card.id);
-        findElement.type = "timeline";
-        setSelectedCard((_presState) => [..._presState, findElement]);
-        setCards((_presState) =>
-          _presState.filter((card) => card.id !== item.id)
-        );
-      } else {
-        const findElement = selectedCard.find((card) => item.id === card.id);
-        findElement.type = "list";
-        setCards((_presState) => [..._presState, findElement]);
-        setSelectedCard((_presState) =>
-          _presState.filter((card) => card.id !== item.id)
-        );
-      }
-    },
-    [setSelectedCard, setCards, cards, selectedCard]
-  );
+    setCards((prevState) => {
+      const newItems = prevState.filter((_, idx) => idx !== dragIndex);
+      newItems.splice(hoverIndex, 0, card);
+      return [...newItems];
+    });
+  };
 
   return (
     <div
@@ -91,24 +38,25 @@ function App() {
       }}
     >
       <div
-        ref={removeFromTimelineRef}
         style={{
           padding: 10,
           border: "1px solid blue",
           width: 400,
-          background: isListOver ? "blue" : "white",
         }}
       >
-        {cards.map((item, index) => {
-          return (
-            <ListElement
-              key={item.id}
-              {...item}
-              onDropList={moveListItem}
-              index={index}
-            />
-          );
-        })}
+        <DropWrapper onDrop={onDrop} status="list">
+          {cards
+            .filter((i) => i.status === "list")
+            .map((i, idx) => (
+              <ListElement
+                key={i.id}
+                index={idx}
+                moveItem={moveItem}
+                card={i}
+                status="list"
+              />
+            ))}
+        </DropWrapper>
       </div>
       <div
         style={{
@@ -118,25 +66,26 @@ function App() {
         }}
       >
         <div
-          ref={addToTimelineRef}
+          ref={timelineRef}
           style={{
-            background: isOver ? "green" : "white",
             border: "1px solid red",
             width: "100%",
-            height: 40,
-            display: "flex",
+            height: "40px",
           }}
         >
-          {selectedCard.map((item, index) => {
-            return (
-              <ListElement
-                key={item.id}
-                {...item}
-                onDropList={moveListItem}
-                index={index}
-              />
-            );
-          })}
+          <DropWrapper onDrop={onDrop} status="timeline">
+            {cards
+              .filter((i) => i.status === "timeline")
+              .map((i, idx) => (
+                <ListElement
+                  key={i.id}
+                  index={idx}
+                  moveItem={moveItem}
+                  card={i}
+                  status="timeline"
+                />
+              ))}
+          </DropWrapper>
         </div>
       </div>
     </div>

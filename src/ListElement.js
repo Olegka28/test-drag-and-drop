@@ -1,52 +1,97 @@
-import { useDrag } from "react-dnd";
+import { useRef } from "react";
+import { useDrag, useDrop } from "react-dnd";
 
-export const ListElement = ({ text, onDropList, id, index, type }) => {
-  const [{ isDragging }, dragRef] = useDrag(() => ({
-    type: "list",
-    item: { id, index, type },
-    end: (item, monitor) => {
-      const dropResult = monitor.getDropResult();
+export const ListElement = ({ card, moveItem, index }) => {
+  const ref = useRef(null);
 
-      if (item && dropResult) {
-        onDropList(item);
-      }
-    },
+  const [, drop] = useDrop({
+    accept: "ITEM",
     collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
+      isOver: !!monitor.isOver(),
     }),
-  }));
+    hover(item, monitor) {
+      if (!ref.current) {
+        return;
+      }
+
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      if (card.status === "list" && dragIndex === hoverIndex) {
+        return;
+      }
+
+      const hoveredRect = ref.current.getBoundingClientRect();
+      const hoverMiddleY = (hoveredRect.bottom - hoveredRect.top) / 2;
+      const mousePosition = monitor.getClientOffset();
+      const hoverClientY = mousePosition.y - hoveredRect.top;
+
+      if (
+        card.status === "list" &&
+        dragIndex < hoverIndex &&
+        hoverClientY < hoverMiddleY
+      ) {
+        return;
+      }
+
+      if (
+        card.status === "list" &&
+        dragIndex > hoverIndex &&
+        hoverClientY > hoverMiddleY
+      ) {
+        return;
+      }
+
+      if (card.status === "list") {
+        moveItem(dragIndex, hoverIndex);
+
+        item.index = hoverIndex;
+      }
+      // moveItem(dragIndex, hoverIndex);
+
+      // item.index = hoverIndex;
+    },
+  });
+
+  const [{ isDragging }, dragRef] = useDrag({
+    item: { type: "ITEM", ...card, index },
+    collect: (monitor) => {
+      return {
+        isDragging: monitor.isDragging(),
+      };
+    },
+  });
+
+  dragRef(drop(ref));
 
   return (
-    <div
-      ref={dragRef}
-      style={
-        type === "list"
-          ? {
-              border: "1px dashed gray",
-              padding: "0.5rem 1rem",
-              marginBottom: ".5rem",
-              backgroundColor: "white",
-              cursor: "move",
-            }
-          : {
-              display: "flex",
-            }
-      }
-    >
-      {type === "list" ? (
-        text
-      ) : (
-        <span
-          style={{
-            display: "inline",
-            border: "1px solid gray",
-            backgroundColor: "white",
-            cursor: "move",
-          }}
-        >
-          {text}
-        </span>
-      )}
-    </div>
+    <>
+      <div
+        ref={ref}
+        style={
+          card.status === "timeline"
+            ? {
+                width: "50px",
+                height: "40px",
+                border: "1px solid green",
+                position: "absolute",
+                left: card.left - 25,
+                boxSizing: "border-box",
+                cursor: "move",
+                opacity: isDragging ? 0 : 1,
+              }
+            : {
+                opacity: isDragging ? 0 : 1,
+                border: "1px dashed gray",
+                padding: "0.5rem 1rem",
+                marginBottom: ".5rem",
+                backgroundColor: "white",
+                cursor: "move",
+              }
+        }
+      >
+        {card.text}
+      </div>
+    </>
   );
 };
