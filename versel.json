@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/branding", "destination": "https://halo-lab.webflow.io/" }
+    { "source": "/branding", "destination": "<https://halo-lab.webflow.io/>" }
   ]
 }
