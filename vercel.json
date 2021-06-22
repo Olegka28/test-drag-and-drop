@@ -2,7 +2,7 @@
   "rewrites": [
     { 
       "source": "/branding", 
-      "destination": "<https://halo-lab.webflow.io/>" 
+      "destination": "https://halo-lab.webflow.io/" 
     }
   ]
 }
